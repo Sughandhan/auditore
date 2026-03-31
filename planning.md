@@ -5,52 +5,57 @@
 ---
 
 ## Phase 1 — Environment & PDF Extraction ✅
+
 **Goal:** Infrastructure running, PDF-to-text pipeline working.
 
-| Task | File | Status |
-|---|---|---|
-| Install dependencies | package.json | Done |
-| Define types & Zod schemas | src/lib/types.ts | Done |
-| PDF parser wrapper | src/lib/pdf-parser.ts | Done |
-| ASC 606 accounting logic | src/lib/accounting-logic.ts | Done |
-| PDF upload API route | src/app/api/upload/route.ts | Done |
-| CopilotKit + Gemini API route | src/app/api/copilotkit/route.ts | Done |
+| Task                          | File                            | Status |
+| ----------------------------- | ------------------------------- | ------ |
+| Install dependencies          | package.json                    | Done   |
+| Define types & Zod schemas    | src/lib/types.ts                | Done   |
+| PDF parser wrapper            | src/lib/pdf-parser.ts           | Done   |
+| ASC 606 accounting logic      | src/lib/accounting-logic.ts     | Done   |
+| PDF upload API route          | src/app/api/upload/route.ts     | Done   |
+| CopilotKit + Gemini API route | src/app/api/copilotkit/route.ts | Done   |
 
 **Verification:** `POST /api/upload` with a PDF → `{ text, pageCount, fileName }`
 
 ---
 
 ## Phase 2 — UI Shell & Mock Mode ✅
+
 **Goal:** Full UI visible with realistic mock data — zero API credits burned.
 
-| Task | File | Status |
-|---|---|---|
-| Mock contract & schedule data | src/lib/mock-data.ts | Done |
-| RevenueTable component | src/components/RevenueTable.tsx | Done |
-| ContractSummary component | src/components/ContractSummary.tsx | Done |
-| UploadZone (drag-drop) | src/components/UploadZone.tsx | Done |
-| Root layout + CopilotKit styles | src/app/layout.tsx | Done |
-| Main page with chat + upload | src/app/page.tsx | Done |
+| Task                            | File                               | Status |
+| ------------------------------- | ---------------------------------- | ------ |
+| Mock contract & schedule data   | src/lib/mock-data.ts               | Done   |
+| RevenueTable component          | src/components/RevenueTable.tsx    | Done   |
+| ContractSummary component       | src/components/ContractSummary.tsx | Done   |
+| UploadZone (drag-drop)          | src/components/UploadZone.tsx      | Done   |
+| Root layout + CopilotKit styles | src/app/layout.tsx                 | Done   |
+| Main page with chat + upload    | src/app/page.tsx                   | Done   |
 
 **To preview mock mode:** Add `NEXT_PUBLIC_MOCK_MODE=true` to `.env.local`, then `npm run dev`.
 
 ---
 
-## Phase 3 — AI Agent Logic 🔄
+## Phase 3 — AI Agent Logic ✅
+
 **Goal:** Real Gemini extraction with generative UI rendering in chat.
 
-| Task | Details |
-|---|---|
-| Add `GEMINI_API_KEY` to `.env.local` | Required for Gemini 2.5 Flash |
-| `useCopilotReadable` wires contract text | Already in page.tsx — active once PDF uploaded |
-| `useCopilotAction` renders table in chat | Already in page.tsx — triggers on AI call |
-| Gemini model selection | `gemini-2.5-flash-preview-04-17` in api/copilotkit/route.ts |
+| Task                                               | Details                                                     |
+| -------------------------------------------------- | ----------------------------------------------------------- |
+| Add `GOOGLE_GENERATIVE_AI_API_KEY` to `.env.local` | Required for Gemini 2.5 Flash                               |
+| `useCopilotReadable` wires contract text           | Done — active once PDF uploaded                             |
+| `useCopilotAction` renders table in chat           | Done — triggers on AI call                                  |
+| Gemini model selection                             | `gemini-2.5-flash-preview-04-17` in api/copilotkit/route.ts |
+| Pass `apiKey` explicitly to adapter                | Done — reads `process.env.GOOGLE_GENERATIVE_AI_API_KEY`     |
 
-**To enable:** Set `GEMINI_API_KEY` in `.env.local`, set `NEXT_PUBLIC_MOCK_MODE=false`.
+**To enable:** Set `GOOGLE_GENERATIVE_AI_API_KEY` in `.env.local`, set `NEXT_PUBLIC_MOCK_MODE=false`.
 
 ---
 
 ## Phase 4 — Verification & Polish
+
 **Goal:** Production-ready verification loop and polished UX.
 
 - [ ] Confirm `verifySchedule()` logs discrepancy in chat when sum ≠ contract value
@@ -80,7 +85,7 @@ User uploads PDF
 ```bash
 # 1. Copy env template
 cp .env.local.example .env.local
-# Edit .env.local and add your GEMINI_API_KEY
+# Edit .env.local and add your GOOGLE_GENERATIVE_AI_API_KEY
 
 # 2. Start in mock mode (no API key needed)
 NEXT_PUBLIC_MOCK_MODE=true npm run dev
@@ -94,14 +99,14 @@ npm run dev
 
 ## Key Files
 
-| File | Purpose |
-|---|---|
-| `src/lib/types.ts` | Zod schemas: RevenueLineItem, ContractData, RecognitionSchedule |
-| `src/lib/accounting-logic.ts` | calcStraightLine, calcPointInTime, verifySchedule |
-| `src/lib/mock-data.ts` | MOCK_RESULT — realistic 2-year SaaS contract |
-| `src/app/api/copilotkit/route.ts` | Gemini 2.5 Flash via CopilotKit runtime |
-| `src/app/api/upload/route.ts` | Multipart PDF → parsed text |
-| `src/components/RevenueTable.tsx` | ASC 606 table with confidence badges + citations |
-| `src/components/ContractSummary.tsx` | Contract overview card with obligation breakdown |
-| `src/components/UploadZone.tsx` | Drag-drop PDF upload with progress state |
-| `src/app/page.tsx` | Main UI: CopilotKit + useCopilotAction generative rendering |
+| File                                 | Purpose                                                         |
+| ------------------------------------ | --------------------------------------------------------------- |
+| `src/lib/types.ts`                   | Zod schemas: RevenueLineItem, ContractData, RecognitionSchedule |
+| `src/lib/accounting-logic.ts`        | calcStraightLine, calcPointInTime, verifySchedule               |
+| `src/lib/mock-data.ts`               | MOCK_RESULT — realistic 2-year SaaS contract                    |
+| `src/app/api/copilotkit/route.ts`    | Gemini 2.5 Flash via CopilotKit runtime                         |
+| `src/app/api/upload/route.ts`        | Multipart PDF → parsed text                                     |
+| `src/components/RevenueTable.tsx`    | ASC 606 table with confidence badges + citations                |
+| `src/components/ContractSummary.tsx` | Contract overview card with obligation breakdown                |
+| `src/components/UploadZone.tsx`      | Drag-drop PDF upload with progress state                        |
+| `src/app/page.tsx`                   | Main UI: CopilotKit + useCopilotAction generative rendering     |

@@ -27,9 +27,10 @@ export async function POST(request: NextRequest) {
       info,
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("[/api/upload]", err);
     return NextResponse.json(
-      { error: "Failed to parse PDF. Ensure the file is not encrypted or corrupted." },
+      { error: `Failed to parse PDF: ${message}` },
       { status: 500 }
     );
   }
