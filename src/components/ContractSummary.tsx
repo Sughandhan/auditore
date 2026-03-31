@@ -4,7 +4,7 @@ import { ContractData } from "@/lib/types";
 import { Building2, Calendar, DollarSign, FileText, ShieldCheck } from "lucide-react";
 
 interface ContractSummaryProps {
-  contract: ContractData;
+  contract: ContractData | undefined;
   citations?: string[];
 }
 
@@ -28,10 +28,21 @@ function InfoRow({ icon: Icon, label, value, mono = false }: {
 }
 
 export default function ContractSummary({ contract, citations = [] }: ContractSummaryProps) {
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: contract.currency ?? "USD" }).format(n);
+  if (!contract) {
+    return (
+      <div className="w-full rounded-xl border border-slate-700 bg-slate-900 px-5 py-6 text-sm text-slate-500">
+        No contract data available.
+      </div>
+    );
+  }
 
-  const totalObligation = contract.obligations.reduce((s, o) => s + o.totalValue, 0);
+  const obligations = contract.obligations ?? [];
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: contract.currency ?? "USD" }).format(n ?? 0);
+
+  console.log("[ContractSummary] contract:", JSON.stringify(contract, null, 2));
+
+  const totalObligation = obligations.reduce((s, o) => s + o.totalValue, 0);
   const isAllocated = Math.abs(totalObligation - contract.totalValue) <= 0.01;
 
   return (
@@ -75,7 +86,7 @@ export default function ContractSummary({ contract, citations = [] }: ContractSu
           )}
         </div>
         <div className="space-y-2">
-          {contract.obligations.map((ob, i) => (
+          {obligations.map((ob, i) => (
             <div key={i} className="rounded-lg bg-slate-800 border border-slate-700 px-4 py-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">

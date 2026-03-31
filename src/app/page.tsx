@@ -10,7 +10,7 @@ import UploadZone from "@/components/UploadZone";
 import RevenueTable from "@/components/RevenueTable";
 import ContractSummary from "@/components/ContractSummary";
 import { MOCK_RESULT } from "@/lib/mock-data";
-import { ExtractionResult, ExtractionResultSchema } from "@/lib/types";
+import { ExtractionResult } from "@/lib/types";
 
 const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
 
@@ -19,11 +19,19 @@ const ASC606_INSTRUCTIONS = `You are a senior GAAP revenue recognition auditor s
 The full contract text is available in your context under "contract_text".
 
 When the user asks you to analyze the contract or generate a revenue schedule:
-1. Identify all performance obligations (subscriptions, licenses, professional services, support)
-2. Classify each as "over-time" (straight-line) or "point-in-time"
-3. Extract dollar amounts and dates — cite [Section X.Y, Page N] for every figure
-4. Assign confidence scores 0-100 based on how explicit the document is
-5. Call the generate_revenue_schedule action with the structured extraction result
+1. Identify all performance obligations (subscriptions, licenses, professional services, support).
+2. Classify each obligation as "over-time" (straight-line) or "point-in-time".
+3. Extract dollar amounts and dates — cite [Section X.Y, Page N] for every figure.
+4. Assign confidence scores 0-100 based on how explicit the document is.
+5. Call the generate_revenue_schedule action with the structured result.
+
+CRITICAL — field names and types must match EXACTLY:
+- result.contract.totalValue → plain number (e.g. 3800000, NOT "3,800,000.00")
+- result.contract.obligations[].type → "over-time" or "point-in-time" (NOT "recurring" or "one-time")
+- result.schedule.lineItems[].recognitionType → "over-time" or "point-in-time"
+- All monetary values must be plain numbers, never strings with commas or currency symbols.
+- Dates must be YYYY-MM-DD strings.
+- result.schedule.isBalanced must be true only if totalRecognized === contractValue (within $0.01).
 
 For follow-up questions, answer directly from the contract text in context.
 Always cite specific sections and page numbers. Never guess — if uncertain, say so and lower the confidence score.`;
@@ -57,8 +65,74 @@ function AuditorApp() {
       {
         name: "result",
         type: "object",
-        description: "The full extraction result conforming to ExtractionResult schema",
+        description: "The full extraction result",
         required: true,
+        attributes: [
+          {
+            name: "contract",
+            type: "object",
+            description: "Contract metadata extracted from the document",
+            attributes: [
+              { name: "vendor", type: "string", description: "Name of the vendor/seller" },
+              { name: "customer", type: "string", description: "Name of the customer/buyer" },
+              { name: "totalValue", type: "number", description: "Total contract value as a number (no commas or $)" },
+              { name: "currency", type: "string", description: "Currency code, e.g. USD" },
+              { name: "startDate", type: "string", description: "Contract start date YYYY-MM-DD" },
+              { name: "endDate", type: "string", description: "Contract end date YYYY-MM-DD" },
+              { name: "executionDate", type: "string", description: "Date the contract was signed YYYY-MM-DD" },
+              { name: "confidence", type: "number", description: "Overall extraction confidence 0-100" },
+              {
+                name: "obligations",
+                type: "object[]",
+                description: "Array of performance obligations",
+                attributes: [
+                  { name: "name", type: "string", description: "Name of the performance obligation" },
+                  { name: "type", type: "string", description: "over-time or point-in-time" },
+                  { name: "totalValue", type: "number", description: "Allocated value as a number" },
+                  { name: "startDate", type: "string", description: "Start date YYYY-MM-DD" },
+                  { name: "endDate", type: "string", description: "End date YYYY-MM-DD (optional)" },
+                  { name: "confidence", type: "number", description: "Confidence 0-100" },
+                  { name: "citation", type: "string", description: "Section/page citation" },
+                ],
+              },
+            ],
+          },
+          {
+            name: "schedule",
+            type: "object",
+            description: "Month-by-month revenue recognition schedule",
+            attributes: [
+              {
+                name: "lineItems",
+                type: "object[]",
+                description: "One row per recognition event",
+                attributes: [
+                  { name: "period", type: "string", description: "e.g. 2015-11" },
+                  { name: "amount", type: "number", description: "Amount recognized in this period" },
+                  { name: "recognitionType", type: "string", description: "over-time or point-in-time" },
+                  { name: "confidence", type: "number", description: "Confidence 0-100" },
+                  { name: "citation", type: "string", description: "Section/page citation" },
+                  { name: "description", type: "string", description: "Short description of what is recognized" },
+                ],
+              },
+              { name: "totalRecognized", type: "number", description: "Sum of all line item amounts" },
+              { name: "contractValue", type: "number", description: "Total contract value (must match contract.totalValue)" },
+              { name: "isBalanced", type: "boolean", description: "true if totalRecognized equals contractValue" },
+              { name: "discrepancy", type: "number", description: "Absolute difference between totalRecognized and contractValue" },
+              { name: "verificationNote", type: "string", description: "One-sentence ASC 606 verification summary" },
+            ],
+          },
+          {
+            name: "rawCitations",
+            type: "string[]",
+            description: "List of all cited sections/pages used in the analysis",
+          },
+          {
+            name: "extractionNote",
+            type: "string",
+            description: "Optional note about extraction quality or caveats",
+          },
+        ],
       },
     ],
     render: ({ status, args }) => {
@@ -70,8 +144,10 @@ function AuditorApp() {
           </div>
         );
       }
-      const parsed = ExtractionResultSchema.safeParse(args.result);
-      if (!parsed.success) {
+      const data = args.result as ExtractionResult;
+      console.log("[generate_revenue_schedule] render args.result:", JSON.stringify(args.result, null, 2));
+      if (!data?.contract || !data?.schedule) {
+        console.error("[generate_revenue_schedule] Missing contract or schedule:", data);
         return (
           <p className="text-sm text-red-400">
             Could not parse extraction result. Check console for details.
@@ -81,19 +157,19 @@ function AuditorApp() {
       return (
         <div className="space-y-4 my-2">
           <ContractSummary
-            contract={parsed.data.contract}
-            citations={parsed.data.rawCitations}
+            contract={data.contract}
+            citations={data.rawCitations}
           />
-          <RevenueTable schedule={parsed.data.schedule} />
-          {parsed.data.extractionNote && (
-            <p className="text-xs text-slate-500 italic">{parsed.data.extractionNote}</p>
+          <RevenueTable schedule={data.schedule} />
+          {data.extractionNote && (
+            <p className="text-xs text-slate-500 italic">{data.extractionNote}</p>
           )}
         </div>
       );
     },
     handler: async ({ result: rawResult }) => {
-      const parsed = ExtractionResultSchema.safeParse(rawResult);
-      if (parsed.success) setResult(parsed.data);
+      console.log("[generate_revenue_schedule] handler rawResult:", JSON.stringify(rawResult, null, 2));
+      if (rawResult) setResult(rawResult as ExtractionResult);
     },
   });
 

@@ -4,7 +4,7 @@ import { RecognitionSchedule } from "@/lib/types";
 import { CheckCircle, AlertTriangle, TrendingUp, Clock } from "lucide-react";
 
 interface RevenueTableProps {
-  schedule: RecognitionSchedule;
+  schedule: RecognitionSchedule | undefined;
   title?: string;
 }
 
@@ -25,6 +25,14 @@ function ConfidenceBadge({ score }: { score: number }) {
 export default function RevenueTable({ schedule, title = "Revenue Recognition Schedule" }: RevenueTableProps) {
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+
+  if (!schedule) {
+    return (
+      <div className="w-full rounded-xl border border-slate-700 bg-slate-900 px-5 py-6 text-sm text-slate-500">
+        No schedule data available.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full rounded-xl border border-slate-700 bg-slate-900 overflow-hidden shadow-xl">
