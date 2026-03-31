@@ -24,7 +24,9 @@ function ConfidenceBadge({ score }: { score: number }) {
 
 export default function RevenueTable({ schedule, title = "Revenue Recognition Schedule" }: RevenueTableProps) {
   const fmt = (n: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+      Number.isFinite(n) ? n : 0
+    );
 
   if (!schedule) {
     return (

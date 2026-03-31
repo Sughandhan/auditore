@@ -14,6 +14,8 @@ export function calcStraightLine(params: {
 }): RevenueLineItem[] {
   const { totalValue, startDate, endDate, description, confidence, citation } = params;
 
+  if (!totalValue || totalValue <= 0) return [];
+
   const start = new Date(startDate);
   const end = new Date(endDate);
 
@@ -58,7 +60,7 @@ export function calcPointInTime(params: {
   const { totalValue, completionDate, description, confidence, citation } = params;
   return {
     period: completionDate,
-    amount: Math.round(totalValue * 100) / 100,
+    amount: Math.round((totalValue > 0 ? totalValue : 0) * 100) / 100,
     recognitionType: "point-in-time" as const,
     confidence,
     citation,

@@ -38,9 +38,9 @@ export default function ContractSummary({ contract, citations = [] }: ContractSu
 
   const obligations = contract.obligations ?? [];
   const fmt = (n: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: contract.currency ?? "USD" }).format(n ?? 0);
-
-  console.log("[ContractSummary] contract:", JSON.stringify(contract, null, 2));
+    new Intl.NumberFormat("en-US", { style: "currency", currency: contract.currency ?? "USD" }).format(
+      Number.isFinite(n) ? n : 0
+    );
 
   const totalObligation = obligations.reduce((s, o) => s + o.totalValue, 0);
   const isAllocated = Math.abs(totalObligation - contract.totalValue) <= 0.01;
@@ -104,11 +104,11 @@ export default function ContractSummary({ contract, citations = [] }: ContractSu
                 <div className="flex-1 h-1.5 rounded-full bg-slate-700">
                   <div
                     className={`h-1.5 rounded-full ${ob.type === "over-time" ? "bg-sky-500" : "bg-violet-500"}`}
-                    style={{ width: `${(ob.totalValue / contract.totalValue) * 100}%` }}
+                    style={{ width: `${(ob.totalValue / (contract.totalValue || 1)) * 100}%` }}
                   />
                 </div>
                 <span className="text-xs text-slate-400 font-mono">
-                  {((ob.totalValue / contract.totalValue) * 100).toFixed(1)}%
+                  {((ob.totalValue / (contract.totalValue || 1)) * 100).toFixed(1)}%
                 </span>
                 <span className={`text-xs px-1.5 py-0.5 rounded border font-mono ${
                   ob.confidence >= 80

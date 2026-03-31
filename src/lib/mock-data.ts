@@ -1,4 +1,4 @@
-import { ContractData, ExtractionResult, RecognitionSchedule } from "./types";
+import { ContractData, ExtractionResult, RecognitionSchedule, SalientFeatures } from "./types";
 import { calcStraightLine, calcPointInTime, verifySchedule } from "./accounting-logic";
 
 export const MOCK_CONTRACT: ContractData = {
@@ -59,9 +59,26 @@ function buildMockSchedule(): RecognitionSchedule {
 
 export const MOCK_SCHEDULE: RecognitionSchedule = buildMockSchedule();
 
+export const MOCK_SALIENT_FEATURES: SalientFeatures = {
+  paymentTerms: "Net 30 days from invoice date",
+  billingCycle: "Annual in advance",
+  renewalTerms: "Auto-renews for successive 1-year terms unless either party provides 60 days written notice prior to end of term",
+  terminationRights: "Either party may terminate for material breach with 30 days written notice; customer may terminate for convenience with 90 days notice",
+  governingLaw: "State of Delaware, United States",
+  initialTerm: "24 months (January 1, 2024 – December 31, 2025)",
+  citations: [
+    "[Section 5.0, Page 22] — Payment terms: Net 30 days, annual in advance",
+    "[Section 7.1, Page 28] — Renewal: auto-renews unless 60-day notice",
+    "[Section 9.2, Page 34] — Termination for cause: 30-day cure period",
+    "[Section 9.3, Page 35] — Termination for convenience: 90-day notice",
+    "[Section 14.1, Page 48] — Governing law: State of Delaware",
+  ],
+};
+
 export const MOCK_RESULT: ExtractionResult = {
   contract: MOCK_CONTRACT,
   schedule: MOCK_SCHEDULE,
+  salientFeatures: MOCK_SALIENT_FEATURES,
   rawCitations: [
     "[Section 1.1, Page 2] — Parties: Acme SaaS Corp. and GlobalTech Enterprises, Inc.",
     "[Section 2.3, Page 8] — Total Contract Value: $240,000 USD",
