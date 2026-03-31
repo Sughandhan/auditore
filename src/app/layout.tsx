@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Revenue Recognition Auditor",
+  title: "Auditore",
   description: "AI-powered GAAP ASC 606 revenue recognition agent",
 };
 

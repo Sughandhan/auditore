@@ -11,8 +11,13 @@ import RevenueTable from "@/components/RevenueTable";
 import ContractSummary from "@/components/ContractSummary";
 import SalientFeaturesCard from "@/components/SalientFeatures";
 import { MOCK_RESULT } from "@/lib/mock-data";
-import { ContractData, ExtractionResult, ExtractionResultSchema, SalientFeatures, SalientFeaturesSchema } from "@/lib/types";
-
+import {
+  ContractData,
+  ExtractionResult,
+  ExtractionResultSchema,
+  SalientFeatures,
+  SalientFeaturesSchema,
+} from "@/lib/types";
 
 const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
 
@@ -51,39 +56,45 @@ CRITICAL field rules (for both actions):
 
 function AuditorApp() {
   const [contractText, setContractText] = useState<string | null>(
-    MOCK_MODE ? "Mock contract text loaded." : null
+    MOCK_MODE ? "Mock contract text loaded." : null,
   );
   const [fileName, setFileName] = useState<string | null>(
-    MOCK_MODE ? "mock-contract.pdf" : null
+    MOCK_MODE ? "mock-contract.pdf" : null,
   );
   const [pageCount, setPageCount] = useState<number | null>(
-    MOCK_MODE ? 82 : null
+    MOCK_MODE ? 82 : null,
   );
   const [result, setResult] = useState<ExtractionResult | null>(
-    MOCK_MODE ? MOCK_RESULT : null
+    MOCK_MODE ? MOCK_RESULT : null,
   );
-  const [salientFeatures, setSalientFeatures] = useState<SalientFeatures | null>(
-    MOCK_MODE ? MOCK_RESULT.salientFeatures ?? null : null
-  );
+  const [salientFeatures, setSalientFeatures] =
+    useState<SalientFeatures | null>(
+      MOCK_MODE ? (MOCK_RESULT.salientFeatures ?? null) : null,
+    );
   const [contractData, setContractData] = useState<ContractData | null>(
-    MOCK_MODE ? MOCK_RESULT.contract : null
+    MOCK_MODE ? MOCK_RESULT.contract : null,
   );
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(true);
 
   useEffect(() => {
-    console.log("[contractText] updated:", contractText ? `${contractText.length} chars` : "null");
+    console.log(
+      "[contractText] updated:",
+      contractText ? `${contractText.length} chars` : "null",
+    );
   }, [contractText]);
 
   useCopilotReadable({
     description: "Full text of the uploaded revenue contract",
-    value: contractText ?? "No contract uploaded yet. Ask the user to upload a PDF.",
+    value:
+      contractText ?? "No contract uploaded yet. Ask the user to upload a PDF.",
   });
 
   // Action 1: Salient features card
   useCopilotAction({
     name: "show_salient_features",
-    description: "Extract and display key contract terms: payment cycles, renewal, termination, governing law",
+    description:
+      "Extract and display key contract terms: payment cycles, renewal, termination, governing law",
     parameters: [
       {
         name: "features",
@@ -91,13 +102,41 @@ function AuditorApp() {
         description: "Salient features extracted from the contract",
         required: true,
         attributes: [
-          { name: "paymentTerms", type: "string", description: "Payment due terms, e.g. Net 30 days from invoice" },
-          { name: "billingCycle", type: "string", description: "How often invoiced, e.g. Annual in advance, Monthly" },
-          { name: "renewalTerms", type: "string", description: "Auto-renewal conditions and notice period" },
-          { name: "terminationRights", type: "string", description: "Conditions and notice period for termination" },
-          { name: "governingLaw", type: "string", description: "Jurisdiction and governing law" },
-          { name: "initialTerm", type: "string", description: "Duration of the initial contract term" },
-          { name: "citations", type: "string[]", description: "Section/page citations for each field" },
+          {
+            name: "paymentTerms",
+            type: "string",
+            description: "Payment due terms, e.g. Net 30 days from invoice",
+          },
+          {
+            name: "billingCycle",
+            type: "string",
+            description: "How often invoiced, e.g. Annual in advance, Monthly",
+          },
+          {
+            name: "renewalTerms",
+            type: "string",
+            description: "Auto-renewal conditions and notice period",
+          },
+          {
+            name: "terminationRights",
+            type: "string",
+            description: "Conditions and notice period for termination",
+          },
+          {
+            name: "governingLaw",
+            type: "string",
+            description: "Jurisdiction and governing law",
+          },
+          {
+            name: "initialTerm",
+            type: "string",
+            description: "Duration of the initial contract term",
+          },
+          {
+            name: "citations",
+            type: "string[]",
+            description: "Section/page citations for each field",
+          },
         ],
       },
     ],
@@ -112,21 +151,37 @@ function AuditorApp() {
         );
       }
       const parsed = SalientFeaturesSchema.safeParse(args.features);
-      console.log("[render:show_salient_features] schema valid:", parsed.success);
+      console.log(
+        "[render:show_salient_features] schema valid:",
+        parsed.success,
+      );
       if (!parsed.success) {
-        console.error("[show_salient_features] Schema validation failed:", parsed.error.flatten());
-        return <p className="text-sm text-red-400">Could not parse salient features from the contract.</p>;
+        console.error(
+          "[show_salient_features] Schema validation failed:",
+          parsed.error.flatten(),
+        );
+        return (
+          <p className="text-sm text-red-400">
+            Could not parse salient features from the contract.
+          </p>
+        );
       }
       return <SalientFeaturesCard features={parsed.data} />;
     },
     handler: async ({ features: rawFeatures }) => {
       console.log("[handler:show_salient_features] invoked");
       const parsed = SalientFeaturesSchema.safeParse(rawFeatures);
-      console.log("[handler:show_salient_features] schema valid:", parsed.success);
+      console.log(
+        "[handler:show_salient_features] schema valid:",
+        parsed.success,
+      );
       if (parsed.success) {
         setSalientFeatures(parsed.data);
       } else {
-        console.error("[show_salient_features] Invalid data:", parsed.error.flatten());
+        console.error(
+          "[show_salient_features] Invalid data:",
+          parsed.error.flatten(),
+        );
       }
     },
   });
@@ -134,7 +189,8 @@ function AuditorApp() {
   // Action 2: Revenue recognition schedule
   useCopilotAction({
     name: "generate_revenue_schedule",
-    description: "Generate and display a GAAP ASC 606 revenue recognition schedule. Call ONLY when the user explicitly requests the schedule.",
+    description:
+      "Generate and display a GAAP ASC 606 revenue recognition schedule. Call ONLY when the user explicitly requests the schedule.",
     parameters: [
       {
         name: "result",
@@ -147,26 +203,87 @@ function AuditorApp() {
             type: "object",
             description: "Contract metadata extracted from the document",
             attributes: [
-              { name: "vendor", type: "string", description: "Name of the vendor/seller" },
-              { name: "customer", type: "string", description: "Name of the customer/buyer" },
-              { name: "totalValue", type: "number", description: "Total contract value as a number (no commas or $)" },
-              { name: "currency", type: "string", description: "Currency code, e.g. USD" },
-              { name: "startDate", type: "string", description: "Contract start date YYYY-MM-DD" },
-              { name: "endDate", type: "string", description: "Contract end date YYYY-MM-DD" },
-              { name: "executionDate", type: "string", description: "Date the contract was signed YYYY-MM-DD" },
-              { name: "confidence", type: "number", description: "Overall extraction confidence 0-100" },
+              {
+                name: "vendor",
+                type: "string",
+                description: "Name of the vendor/seller",
+              },
+              {
+                name: "customer",
+                type: "string",
+                description: "Name of the customer/buyer",
+              },
+              {
+                name: "totalValue",
+                type: "number",
+                description:
+                  "Total contract value as a number (no commas or $)",
+              },
+              {
+                name: "currency",
+                type: "string",
+                description: "Currency code, e.g. USD",
+              },
+              {
+                name: "startDate",
+                type: "string",
+                description: "Contract start date YYYY-MM-DD",
+              },
+              {
+                name: "endDate",
+                type: "string",
+                description: "Contract end date YYYY-MM-DD",
+              },
+              {
+                name: "executionDate",
+                type: "string",
+                description: "Date the contract was signed YYYY-MM-DD",
+              },
+              {
+                name: "confidence",
+                type: "number",
+                description: "Overall extraction confidence 0-100",
+              },
               {
                 name: "obligations",
                 type: "object[]",
                 description: "Array of performance obligations",
                 attributes: [
-                  { name: "name", type: "string", description: "Name of the performance obligation" },
-                  { name: "type", type: "string", description: "over-time or point-in-time" },
-                  { name: "totalValue", type: "number", description: "Allocated value as a number" },
-                  { name: "startDate", type: "string", description: "Start date YYYY-MM-DD" },
-                  { name: "endDate", type: "string", description: "End date YYYY-MM-DD (optional)" },
-                  { name: "confidence", type: "number", description: "Confidence 0-100" },
-                  { name: "citation", type: "string", description: "Section/page citation" },
+                  {
+                    name: "name",
+                    type: "string",
+                    description: "Name of the performance obligation",
+                  },
+                  {
+                    name: "type",
+                    type: "string",
+                    description: "over-time or point-in-time",
+                  },
+                  {
+                    name: "totalValue",
+                    type: "number",
+                    description: "Allocated value as a number",
+                  },
+                  {
+                    name: "startDate",
+                    type: "string",
+                    description: "Start date YYYY-MM-DD",
+                  },
+                  {
+                    name: "endDate",
+                    type: "string",
+                    description: "End date YYYY-MM-DD (optional)",
+                  },
+                  {
+                    name: "confidence",
+                    type: "number",
+                    description: "Confidence 0-100",
+                  },
+                  {
+                    name: "citation",
+                    type: "string",
+                    description: "Section/page citation",
+                  },
                 ],
               },
             ],
@@ -181,28 +298,88 @@ function AuditorApp() {
                 type: "object[]",
                 description: "One row per recognition event",
                 attributes: [
-                  { name: "period", type: "string", description: "e.g. Nov 2015" },
-                  { name: "amount", type: "number", description: "Amount recognized in this period" },
-                  { name: "recognitionType", type: "string", description: "over-time or point-in-time" },
-                  { name: "confidence", type: "number", description: "Confidence 0-100" },
-                  { name: "citation", type: "string", description: "Section/page citation" },
-                  { name: "description", type: "string", description: "Short description of what is recognized" },
+                  {
+                    name: "period",
+                    type: "string",
+                    description: "e.g. Nov 2015",
+                  },
+                  {
+                    name: "amount",
+                    type: "number",
+                    description: "Amount recognized in this period",
+                  },
+                  {
+                    name: "recognitionType",
+                    type: "string",
+                    description: "over-time or point-in-time",
+                  },
+                  {
+                    name: "confidence",
+                    type: "number",
+                    description: "Confidence 0-100",
+                  },
+                  {
+                    name: "citation",
+                    type: "string",
+                    description: "Section/page citation",
+                  },
+                  {
+                    name: "description",
+                    type: "string",
+                    description: "Short description of what is recognized",
+                  },
                 ],
               },
-              { name: "totalRecognized", type: "number", description: "Sum of all line item amounts" },
-              { name: "contractValue", type: "number", description: "Total contract value (must match contract.totalValue)" },
-              { name: "isBalanced", type: "boolean", description: "true if totalRecognized equals contractValue within $0.01" },
-              { name: "discrepancy", type: "number", description: "Absolute difference between totalRecognized and contractValue" },
-              { name: "verificationNote", type: "string", description: "One-sentence ASC 606 verification summary" },
+              {
+                name: "totalRecognized",
+                type: "number",
+                description: "Sum of all line item amounts",
+              },
+              {
+                name: "contractValue",
+                type: "number",
+                description:
+                  "Total contract value (must match contract.totalValue)",
+              },
+              {
+                name: "isBalanced",
+                type: "boolean",
+                description:
+                  "true if totalRecognized equals contractValue within $0.01",
+              },
+              {
+                name: "discrepancy",
+                type: "number",
+                description:
+                  "Absolute difference between totalRecognized and contractValue",
+              },
+              {
+                name: "verificationNote",
+                type: "string",
+                description: "One-sentence ASC 606 verification summary",
+              },
             ],
           },
-          { name: "rawCitations", type: "string[]", description: "All cited sections/pages" },
-          { name: "extractionNote", type: "string", description: "Optional extraction quality note" },
+          {
+            name: "rawCitations",
+            type: "string[]",
+            description: "All cited sections/pages",
+          },
+          {
+            name: "extractionNote",
+            type: "string",
+            description: "Optional extraction quality note",
+          },
         ],
       },
     ],
     render: ({ status, args }) => {
-      console.log("[render:generate_revenue_schedule] status:", status, "| args.result keys:", Object.keys(args?.result ?? {}));
+      console.log(
+        "[render:generate_revenue_schedule] status:",
+        status,
+        "| args.result keys:",
+        Object.keys(args?.result ?? {}),
+      );
       if (status === "inProgress" || status === "executing") {
         return (
           <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
@@ -212,13 +389,23 @@ function AuditorApp() {
         );
       }
       const parsed = ExtractionResultSchema.safeParse(args.result);
-      console.log("[render:generate_revenue_schedule] schema valid:", parsed.success, parsed.success ? `lineItems: ${parsed.data.schedule.lineItems.length}` : parsed.error.flatten());
+      console.log(
+        "[render:generate_revenue_schedule] schema valid:",
+        parsed.success,
+        parsed.success
+          ? `lineItems: ${parsed.data.schedule.lineItems.length}`
+          : parsed.error.flatten(),
+      );
       if (!parsed.success) {
-        console.error("[generate_revenue_schedule] Schema validation failed:", parsed.error.flatten());
+        console.error(
+          "[generate_revenue_schedule] Schema validation failed:",
+          parsed.error.flatten(),
+        );
         return (
           <p className="text-sm text-red-400">
             The AI returned an unexpected data format. Missing fields:{" "}
-            {Object.keys(parsed.error.flatten().fieldErrors).join(", ") || "unknown"}
+            {Object.keys(parsed.error.flatten().fieldErrors).join(", ") ||
+              "unknown"}
           </p>
         );
       }
@@ -227,7 +414,9 @@ function AuditorApp() {
         <div className="space-y-2 my-2">
           <RevenueTable schedule={data.schedule} />
           {data.extractionNote && (
-            <p className="text-xs text-slate-500 italic">{data.extractionNote}</p>
+            <p className="text-xs text-slate-500 italic">
+              {data.extractionNote}
+            </p>
           )}
         </div>
       );
@@ -235,12 +424,18 @@ function AuditorApp() {
     handler: async ({ result: rawResult }) => {
       console.log("[handler:generate_revenue_schedule] invoked");
       const parsed = ExtractionResultSchema.safeParse(rawResult);
-      console.log("[handler:generate_revenue_schedule] schema valid:", parsed.success);
+      console.log(
+        "[handler:generate_revenue_schedule] schema valid:",
+        parsed.success,
+      );
       if (parsed.success) {
         setResult(parsed.data);
         setContractData(parsed.data.contract);
       } else {
-        console.error("[generate_revenue_schedule] Invalid result from AI:", parsed.error.flatten());
+        console.error(
+          "[generate_revenue_schedule] Invalid result from AI:",
+          parsed.error.flatten(),
+        );
       }
     },
   });
@@ -263,21 +458,25 @@ function AuditorApp() {
           <Shield className="w-4 h-4 text-white" />
         </div>
         <div>
-          <h1 className="text-sm font-bold text-slate-100 tracking-tight">Revenue Recognition Auditor</h1>
+          <h1 className="text-sm font-bold text-slate-100 tracking-tight">
+            Auditore
+          </h1>
           <p className="text-xs text-slate-400">ASC 606 — GAAP Compliant</p>
         </div>
 
         {MOCK_MODE && (
-          <span className="ml-4 text-xs font-mono px-2 py-1 rounded border border-amber-700/50 bg-amber-900/30 text-amber-400">
-            MOCK MODE
-          </span>
-        )}
-
-        {fileName && !MOCK_MODE && (
-          <div className="flex items-center gap-2 text-xs text-slate-400 ml-4">
-            <FileSearch className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-slate-300 font-medium">{fileName}</span>
-            {pageCount && <span className="text-slate-500">({pageCount} pages)</span>}
+          <div className="flex items-center gap-3 ml-4">
+            <span className="text-xs font-mono px-2 py-1 rounded border border-amber-700/50 bg-amber-900/30 text-amber-400">
+              MOCK MODE
+            </span>
+            {fileName && (
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <span className="text-slate-300 font-medium">{fileName}</span>
+                {pageCount && (
+                  <span className="text-slate-500">({pageCount} pages)</span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -286,7 +485,11 @@ function AuditorApp() {
           onClick={() => setChatOpen((o) => !o)}
           className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
         >
-          {chatOpen ? <X className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+          {chatOpen ? (
+            <X className="w-3.5 h-3.5" />
+          ) : (
+            <MessageSquare className="w-3.5 h-3.5" />
+          )}
           {chatOpen ? "Close Chat" : "Open Chat"}
         </button>
       </header>
@@ -314,21 +517,26 @@ function AuditorApp() {
 
             {/* Results — build up as AI responds */}
             {contractData && (
-              <ContractSummary contract={contractData} citations={result?.rawCitations} />
+              <ContractSummary
+                contract={contractData}
+                citations={result?.rawCitations}
+              />
             )}
             {salientFeatures && (
               <SalientFeaturesCard features={salientFeatures} />
             )}
-            {result?.schedule && (
-              <RevenueTable schedule={result.schedule} />
-            )}
+            {result?.schedule && <RevenueTable schedule={result.schedule} />}
 
             {/* Empty state */}
             {!contractText && !MOCK_MODE && (
               <div className="flex flex-col items-center justify-center py-24 text-slate-600">
                 <FileSearch className="w-14 h-14 mb-4 opacity-20" />
-                <p className="text-base font-medium text-slate-400">Upload a contract PDF to begin</p>
-                <p className="text-sm mt-1 opacity-60">Supports contracts up to 50 MB</p>
+                <p className="text-base font-medium text-slate-400">
+                  Upload a contract PDF to begin
+                </p>
+                <p className="text-sm mt-1 opacity-60">
+                  Supports contracts up to 50 MB
+                </p>
               </div>
             )}
           </div>
