@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Auditore — AI Revenue Recognition Auditor
 
-## Getting Started
+Upload a revenue contract PDF, ask questions in plain English, and get GAAP-compliant ASC 606 analysis rendered as interactive cards directly in the chat. Powered by Gemini 2.5 Flash — the entire contract loads into a 1M token context window at once, so every follow-up question stays in context without re-uploading.
 
-First, run the development server:
+---
+
+## How it works
+
+1. **Upload a PDF** — drag and drop or click the upload zone (up to 50 MB)
+2. **Gemini reads the full contract** — no chunking, no retrieval pipeline; the whole document is in context
+3. **Ask anything in the chat** — the AI picks the right response type based on your question
+4. **Get a structured response** — one of three response types depending on what you asked (see below)
+
+---
+
+## What you can ask
+
+Auditore has three response modes. You do not need to use specific commands — just ask naturally.
+
+| What you ask | What you get |
+|---|---|
+| "What are the key terms?" / "Summarize this contract" / "Tell me about the payment terms" | **Salient Features Card** — payment terms, billing cycle, initial term, renewal conditions, termination rights, and governing law, each sourced from the contract |
+| "Generate the revenue recognition schedule" / "Show me the ASC 606 table" | **Revenue Recognition Table** — month-by-month schedule, recognition type (over-time or point-in-time), per-line confidence scores, and a balance verification check |
+| Anything else — "Can the customer terminate early?", "What does Section 6.3 say?", "Is there an auto-renewal clause?" | **Plain-text answer** with inline citations like `[Section 12.3, Page 18]` for every factual claim |
+
+---
+
+## Test data
+
+The `test_data/` folder has sample contracts to get started immediately:
+
+- **`contract_1.pdf`** — a large multi-party enterprise software agreement (~82 pages, SEC filing style). Good for testing the revenue schedule on a realistic contract.
+- **`contract_2.pdf`** — a shorter contract for quicker iteration.
+- **`contract_2_prompting guidelines.pdf`** — suggested questions and expected outputs specifically for `contract_2.pdf`. Read this if you want to know what to ask.
+
+---
+
+## Getting started
+
+**Prerequisites:** Node.js 18+, a Gemini API key (free tier at [Google AI Studio](https://aistudio.google.com))
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Create .env.local in the project root
+GOOGLE_GENERATIVE_AI_API_KEY=your_key_here
+NEXT_PUBLIC_MOCK_MODE=false
+
+# 3. Start the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), upload a PDF from `test_data/`, and start asking.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+| Variable | Purpose |
+|---|---|
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Your Gemini API key from Google AI Studio |
+| `NEXT_PUBLIC_MOCK_MODE` | Set to `"true"` to run with built-in sample data and skip the API entirely — useful for UI development |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Next.js 16** (App Router)
+- **CopilotKit** — agentic chat UI and generative UI actions (renders cards inline in the chat stream)
+- **Gemini 2.5 Flash** — 1M token context window handles full SEC filings without chunking
+- **pdf-parse** — server-side PDF text extraction
+- **Tailwind CSS** + Lucide Icons
