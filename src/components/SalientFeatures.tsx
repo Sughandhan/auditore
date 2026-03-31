@@ -1,10 +1,10 @@
 "use client";
 
-import { SalientFeatures } from "@/lib/types";
+import type { SalientFeatures as SalientFeaturesData } from "@/lib/types";
 import { CreditCard, RefreshCw, XCircle, Scale, Clock, Calendar, FileText } from "lucide-react";
 
 interface SalientFeaturesProps {
-  features: SalientFeatures | undefined;
+  features: SalientFeaturesData | undefined;
 }
 
 function InfoRow({ icon: Icon, label, value }: {
