@@ -1,5 +1,4 @@
-export const runtime = "edge"; // Edge runtime: 30s timeout on all Vercel plans (vs 10s serverless on Hobby)
-export const maxDuration = 30;
+export const maxDuration = 60; // Requires Vercel Pro; Hobby plan caps at 10s
 
 import {
   CopilotRuntime,
@@ -20,10 +19,10 @@ const serviceAdapter = new GoogleGenerativeAIAdapter({
   apiKey,
 });
 
-const copilotRuntime = new CopilotRuntime();
+const runtime = new CopilotRuntime();
 
 const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
-  runtime: copilotRuntime,
+  runtime,
   serviceAdapter,
   endpoint: "/api/copilotkit",
 });
